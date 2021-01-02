@@ -20,59 +20,61 @@ const print = (n) => results.push(n)
 const exec = (f) => { let x=f(); if (x !== undefined) { console.log(x); } console.log(results.join('\n')); }
 
 const n = next()
-const edges = range(n - 1).map(() => nexts(2))
+const edges = range(n - 1).map(() => nexts(2).map(n => n - 1))
 const vertices = range(n).fill(0)
-const verticesX = range(n).fill([])
-const q = next()
-const qs = range(q).map(() => nexts(3))
 
-for (const [a, b] of edges) {
-  verticesX[a - 1].push(b)
-  verticesX[b - 1].push(a)
+/** nodes relationships */
+const g = range(n).map(() => new Set())
+for (let [a, b] of edges) {
+  g[a].add(b)
+  g[b].add(a)
 }
+console.error(g)
 
-const memo = {}
-
-/**
- * @param v0 vertex included
- * @param v1 vertex excluded
- */
-const getNodes = (v0, v1) => {
-  const key = `${v0},${v1}`
-  const c = memo[key]
-  if (c) return c
-
-  const nodes = [v0] // included nodes
-  let len = nodes.length
-  while (true) {
-    for (const [n0, n1] of edges) {
-      if (nodes.includes(n0) && !nodes.includes(n1) && n1 !== v1) {
-        nodes.push(n1)
-      } else if (nodes.includes(n1) && !nodes.includes(n0) && n0 !== v1) {
-        nodes.push(n0)
-      }
+const depth = range(n).fill(-1)
+depth[0] = 0
+const q = [0]
+while (q.length > 0) {
+  const at = q.pop()
+  for (const i of g[at]) {
+    if (depth[i] === -1) {
+      depth[i] = depth[at] + 1
+      q.push(i)
     }
-    if (len === nodes.length) { // finished
-      memo[key] = nodes
-      return nodes
-    }
-    len = nodes.length
   }
 }
+console.error(depth)
 
-for (const [t, e, x] of qs) {
+const score = range(n).fill(0)
+
+for (const _ of range(next())) {
+  const [t, e, x] = nexts(3)
   const [a, b] = edges[e - 1]
-  let ns
-  if (t === 1) {
-    ns = getNodes(a, b)
-  } else {
-    ns = getNodes(b, a)
+  if (depth[a] < depth[b] && t === 1) {
+    score[0] += x
+    score[b] -= x
+  } else if (depth[a] < depth[b] && t === 2) {
+    score[b] += x
+  } else if (depth[a] > depth[b] && t === 1) {
+    score[a] += x
+  } else if (depth[a] > depth[b] && t === 2) {
+    score[0] += x
+    score[a] -= x
   }
-  for (const n of ns) {
-    vertices[n - 1] += x
+}
+q.push(0)
+while (q.length > 0) {
+  const at = q.pop()
+  for (const i of g[at]) {
+    if (depth[i] > depth[at]) {
+      score[i] += score[at]
+      q.push(i)
+    }
   }
 }
 
-vertices.forEach((v, i) => {
-  console.log(v)
-})
+console.error(score)
+
+for (const s of score) {
+  console.log(s)
+}
